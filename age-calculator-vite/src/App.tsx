@@ -40,25 +40,6 @@ function App() {
       setInfo((prev) => ({ ...prev, [title]: value }));
     }
   };
-
-  const handleClick = () => {
-    // Declare a variable to store the key of the non-undefined property
-    let nonUndefinedKey: keyof AgeProps | null = null;
-    // Loop over the keys of the info object
-    for (const key in info) {
-      // Check if the value of the property is not undefined
-      if (info[key as keyof AgeProps] !== undefined) {
-        // Set the variable to the key
-        nonUndefinedKey = key as keyof AgeProps;
-        // Exit the loop
-        break;
-      }
-    }
-    // Set the states based on the variable
-    setIsVisible(nonUndefinedKey !== null);
-    setIsDisabled(nonUndefinedKey !== null);
-  };
-
   /* 
   const handleClick = () => {
   // Get an array of the values of the info object
@@ -134,6 +115,26 @@ function App() {
     return { years, months, days };
   }, [info]);
 
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    // Prevent the default behavior of the form
+    e.preventDefault();
+    if (
+      dayError ||
+      monthError ||
+      yearError ||
+      !info.day ||
+      !info.month ||
+      !info.year
+    ) {
+      // Hide the result and enable the inputs
+      setIsVisible(false);
+      setIsDisabled(false);
+    } else {
+      setIsVisible(true);
+      setIsDisabled(true);
+    }
+  };
+
   useEffect(() => {
     console.log("info", info);
   }, [info]);
@@ -142,7 +143,7 @@ function App() {
     <div className="card">
       <h1>Age Calculator App</h1>
       <div className="topInput">
-        <form>
+        <form onSubmit={onSubmit}>
           <div>
             <label>Day</label>
             <input
@@ -214,9 +215,7 @@ function App() {
           </div>
 
           {!isVisible && (
-            <button type="button" onClick={handleClick}>
-              Calculate how long where you born!
-            </button>
+            <button type="submit">Calculate how long where you born!</button>
           )}
         </form>
       </div>
