@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { AgeProps } from "../types/age";
 import AgeShow from "./AgeShow";
 
@@ -8,34 +8,33 @@ function isAgeProp(key: string): key is keyof AgeProps {
 
 export default function Form() {
   const [info, setInfo] = useState<AgeProps>({
-    day: undefined,
-    month: undefined,
-    year: undefined,
+    day: "",
+    month: "",
+    year: "",
   });
 
   const [dayError, setDayError] = useState(false);
   const [monthError, setMonthError] = useState(false);
   const [yearError, setYearError] = useState(false);
-
-  // const [time, setTime] = useState({year: 0,month: 0,day: 0,});
-
   const [isVisible, setIsVisible] = useState(false);
-  // const [isError, setIsError] = useState(false);
   const [isDisabled, setIsDisabled] = useState(false);
   // Declare a state variable for each input element's error status
   const [errorMessage, setErrorMessage] = useState({
     day: "",
     month: "",
     year: "",
+    submit: "",
   });
+
+  const formRef = useRef<HTMLFormElement>(null);
 
   // Memoize the age calculation
   const age = useMemo(() => {
     // Create a date object for the user's birthday
     const birthday = new Date(
-      info.year ?? 0,
-      (info.month ?? 1) - 1,
-      info.day ?? 1
+      info.year ? Number(info.year) : 0,
+      (info.month ? Number(info.month) : 1) - 1,
+      info.day ? Number(info.day) : 1
     );
     // Get the current date
     const now = new Date();
@@ -72,17 +71,6 @@ export default function Form() {
       setInfo((prev) => ({ ...prev, [title]: value }));
     }
   };
-  /* 
-    const handleClick = () => {
-    // Get an array of the values of the info object
-    const values = Object.values(info);
-    // Check if any value is not undefined
-    const hasNonUndefinedValue = values.some((value) => value !== undefined);
-    // Set the states based on the result
-    setIsVisible(hasNonUndefinedValue);
-    setIsDisabled(hasNonUndefinedValue);
-  };
-    */
 
   const handleBlur = (
     name: string,
@@ -125,9 +113,38 @@ export default function Form() {
       // Hide the result and enable the inputs
       setIsVisible(false);
       setIsDisabled(false);
+      setErrorMessage((prev) => {
+        if (!info.day) {
+          return {
+            ...prev,
+            submit: "Please introduce a valid day",
+          };
+        } else if (!info.month) {
+          return {
+            ...prev,
+            submit: "Please introduce a valid month",
+          };
+        } else if (!info.year) {
+          return {
+            ...prev,
+            submit: "Please introduce a valid year",
+          };
+        }
+        return prev;
+      });
     } else {
       setIsVisible(true);
       setIsDisabled(true);
+      setErrorMessage((prev) => ({
+        ...prev,
+        submit: "",
+      }));
+    }
+  };
+
+  const resetForm = () => {
+    if (formRef.current) {
+      formRef.current.reset();
     }
   };
 
@@ -135,16 +152,18 @@ export default function Form() {
     console.log("info", info);
   }, [info]);
 
+  const { day, month, year } = info;
+
   return (
     <div>
-      <form onSubmit={onSubmit}>
+      <form onSubmit={onSubmit} ref={formRef}>
         <div>
           <label>Day</label>
           <input
             type="number"
             name="day"
             title="The Day of your birth"
-            value={info.day}
+            value={day}
             onChange={(e) => handleChange(e.target.name, e.target.value)}
             onBlur={(e) =>
               handleBlur(e.target.name, e.target.value, {
@@ -165,7 +184,7 @@ export default function Form() {
             type="number"
             name="month"
             title="The Month of your birth"
-            value={info.month}
+            value={month}
             onChange={(e) => handleChange(e.target.name, e.target.value)}
             onBlur={(e) =>
               handleBlur(e.target.name, e.target.value, {
@@ -186,7 +205,7 @@ export default function Form() {
             type="number"
             name="year"
             title="The Year of your birth"
-            value={info.year}
+            value={year}
             onChange={(e) => handleChange(e.target.name, e.target.value)}
             onBlur={(e) =>
               handleBlur(e.target.name, e.target.value, {
@@ -208,7 +227,16 @@ export default function Form() {
       {dayError && <p>{errorMessage.day}</p>}
       {monthError && <p>{errorMessage.month}</p>}
       {yearError && <p>{errorMessage.year}</p>}
-      {isVisible && <AgeShow age={age} isDisabled={setIsDisabled} />}
+      {errorMessage.submit.length > 0 && <p>{errorMessage.submit}</p>}
+      {isVisible && (
+        <AgeShow
+          age={age}
+          isDisabled={setIsDisabled}
+          resetForm={resetForm}
+          setInfo={setInfo}
+          setIsVisible={setIsVisible}
+        />
+      )}
     </div>
   );
 }
